@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Alert+ — medicine stock and expiry management">
+  <meta name="theme-color" content="#0b1020">
+  <title>Alert+ | Medicine Inventory</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💊%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <script>
+    // Apply saved/system theme before first paint (no flash)
+    (function () {
+      try {
+        var t = localStorage.getItem("alertplus_theme");
+        if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) { document.documentElement.setAttribute("data-theme", "light"); }
+    })();
+  </script>
+  <style>
+    :root{
+      --bg:#f4f6fb;--bg-2:#eef1fa;
+      --surface:rgba(255,255,255,.72);--surface-solid:#ffffff;--surface-2:#f6f8fd;
+      --text:#0b1020;--text-2:#475069;--muted:#7a849c;
+      --border:rgba(15,23,42,.08);--border-strong:rgba(15,23,42,.14);
+      --brand:#14b8a6;--brand-2:#6366f1;--brand-3:#ec4899;
+      --grad:linear-gradient(135deg,#14b8a6 0%,#3b82f6 55%,#8b5cf6 100%);
+      --grad-soft:linear-gradient(135deg,rgba(20,184,166,.14),rgba(139,92,246,.14));
+      --ok:#059669;--ok-bg:rgba(16,185,129,.14);
+      --warn:#b45309;--warn-bg:rgba(245,158,11,.18);
+      --bad:#e11d48;--bad-bg:rgba(244,63,94,.14);
+      --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+      --shadow-md:0 12px 32px -12px rgba(30,41,90,.22);
+      --shadow-lg:0 30px 60px -24px rgba(30,41,90,.35);
+      --radius:22px;--radius-sm:14px;
+      --blob-1:rgba(20,184,166,.28);--blob-2:rgba(99,102,241,.26);--blob-3:rgba(236,72,153,.16);
+      --input-bg:rgba(255,255,255,.85);--row-hover:rgba(99,102,241,.06);
+    }
+    [data-theme="dark"]{
+      --bg:#070a16;--bg-2:#0b1020;
+      --surface:rgba(20,26,48,.62);--surface-solid:#0f1530;--surface-2:rgba(255,255,255,.04);
+      --text:#eef1ff;--text-2:#b4bcd6;--muted:#7f89a8;
+      --border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.16);
+      --ok:#34d399;--ok-bg:rgba(52,211,153,.14);
+      --warn:#fbbf24;--warn-bg:rgba(251,191,36,.14);
+      --bad:#fb7185;--bad-bg:rgba(251,113,133,.15);
+      --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+      --shadow-md:0 16px 40px -16px rgba(0,0,0,.7);
+      --shadow-lg:0 36px 70px -26px rgba(0,0,0,.85);
+      --blob-1:rgba(20,184,166,.22);--blob-2:rgba(99,102,241,.28);--blob-3:rgba(236,72,153,.16);
+      --input-bg:rgba(255,255,255,.05);--row-hover:rgba(255,255,255,.04);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;color-scheme:light}
+    [data-theme="dark"]{color-scheme:dark}
+    body{margin:0;min-height:100vh;font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .3s,color .3s}
+    body:has(dialog[open]){overflow:hidden}
+
+    /* ───────── Background ───────── */
+    .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,var(--bg),var(--bg-2))}
+    .aurora i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.9;animation:float 18s ease-in-out infinite}
+    .aurora i:nth-child(1){width:520px;height:520px;background:var(--blob-1);top:-160px;left:-120px}
+    .aurora i:nth-child(2){width:600px;height:600px;background:var(--blob-2);top:10%;right:-200px;animation-delay:-6s}
+    .aurora i:nth-child(3){width:460px;height:460px;background:var(--blob-3);bottom:-180px;left:30%;animation-delay:-11s}
+    .grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:26px 26px;mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%)}
+    @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,30px) scale(1.08)}}
+    @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+    @keyframes grow{from{width:0}}
+    @keyframes shimmer{to{background-position:-200% 0}}
+    @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+    @keyframes slidein{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+
+    /* ───────── Navbar ───────── */
+    header{position:sticky;top:14px;z-index:50;padding:0 16px}
+    .brand{max-width:1160px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 12px 10px 14px;border-radius:999px;background:var(--surface);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--border);box-shadow:var(--shadow-md)}
+    .logo{width:44px;height:44px;display:grid;place-items:center;font-size:22px;border-radius:14px;background:var(--grad);box-shadow:0 8px 20px -6px rgba(99,102,241,.6);flex-shrink:0}
+    .brand h1{margin:0;font-family:"Plus Jakarta Sans",Inter,sans-serif;font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.1}
+    .brand h1 b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .brand p{margin:2px 0 0;font-size:12px;color:var(--muted);font-weight:500}
+    .auth-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+    .auth-actions span{font-size:12px;font-weight:600;color:var(--text-2);padding:7px 12px 7px 24px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);position:relative;white-space:nowrap}
+    .auth-actions span:before{content:"";position:absolute;left:11px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--muted)}
+    body.authed .auth-actions span:before{background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,.2)}
+    .icon-btn{width:40px;height:40px;padding:0;display:grid;place-items:center;font-size:17px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);color:var(--text)}
+    .auth-button{background:var(--text);color:var(--bg);padding:11px 20px;border-radius:999px;box-shadow:var(--shadow-sm)}
+
+    /* Login error banner (visible even when logged out) */
+    .auth-banner{max-width:1160px;margin:16px auto 0;padding:0 16px;animation:rise .4s both}
+    .auth-banner-in{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;background:var(--bad-bg);border:1px solid rgba(244,63,94,.38);font-size:14px;font-weight:500;overflow-wrap:anywhere}
+    .auth-banner-in .ab-ic{font-size:18px}
+    .auth-banner-in button{margin-left:auto;padding:6px 10px;font-size:13px;background:transparent;color:var(--text-2)}
+
+    main{max-width:1160px;margin:0 auto;padding:30px 16px 20px;animation:rise .6s ease both}
+
+    /* ───────── Landing (logged out) ───────── */
+    #welcome{display:none;max-width:1160px;margin:0 auto;padding:64px 16px 30px;text-align:center;animation:rise .7s ease both}
+    #appContent[hidden] + #welcome{display:block}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--text-2);background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(10px)}
+    .pill:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px rgba(20,184,166,.22)}
+    #welcome h2{margin:22px auto 16px;max-width:760px;font-family:"Plus Jakarta Sans",Inter,sans-serif;font-size:clamp(36px,6.4vw,68px);line-height:1.04;letter-spacing:-2px;font-weight:800}
+    #welcome h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+    #welcome p.lead{margin:0 auto 30px;max-width:560px;color:var(--text-2);font-size:clamp(15px,2vw,18px);line-height:1.6}
+    .cta{display:inline-flex;align-items:center;gap:10px;padding:16px 30px;font-size:16px;border-radius:999px;background:var(--grad);color:#fff;box-shadow:0 18px 40px -12px rgba(99,102,241,.65)}
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px;text-align:left}
+    .feature{padding:24px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(14px);box-shadow:var(--shadow-md);transition:transform .3s,border-color .3s}
+    .feature:hover{transform:translateY(-6px);border-color:var(--border-strong)}
+    .feature .ic{width:46px;height:46px;display:grid;place-items:center;font-size:22px;border-radius:14px;background:var(--grad-soft);margin-bottom:16px}
+    .feature h3{margin:0 0 6px;font-size:16px;font-weight:700}.feature p{margin:0;font-size:14px;line-height:1.55;color:var(--text-2)}
+
+    /* ───────── Alert banner ───────── */
+    .alert-banner{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:20px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);backdrop-filter:blur(14px);box-shadow:var(--shadow-md);animation:rise .5s both}
+    .alert-banner.danger{border-color:rgba(244,63,94,.4);background:linear-gradient(90deg,var(--bad-bg),var(--surface) 70%)}
+    .alert-banner.warn{border-color:rgba(245,158,11,.4);background:linear-gradient(90deg,var(--warn-bg),var(--surface) 70%)}
+    .alert-banner.ok{border-color:rgba(16,185,129,.35);background:linear-gradient(90deg,var(--ok-bg),var(--surface) 70%)}
+    .alert-ic{width:44px;height:44px;display:grid;place-items:center;font-size:21px;border-radius:14px;background:var(--surface-2);flex-shrink:0}
+    .alert-banner strong{display:block;font-size:15px;font-weight:700}
+    .alert-banner .t{font-size:13.5px;color:var(--text-2)}
+    .alert-banner > button{margin-left:auto;white-space:nowrap}
+
+    /* ───────── Stat cards ───────── */
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px}
+    .summary-card,.panel{background:var(--surface);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md)}
+    .summary-card{position:relative;overflow:hidden;padding:22px 22px 22px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:transform .3s ease,border-color .3s}
+    .summary-card:after{content:"";position:absolute;width:160px;height:160px;right:-60px;top:-70px;border-radius:50%;background:var(--grad);opacity:.14;filter:blur(8px);transition:opacity .3s,transform .5s}
+    .summary-card:nth-child(2):after{background:linear-gradient(135deg,#f59e0b,#f97316)}
+    .summary-card:nth-child(3):after{background:linear-gradient(135deg,#f43f5e,#ec4899)}
+    .summary-card:hover{transform:translateY(-5px);border-color:var(--border-strong)}
+    .summary-card:hover:after{opacity:.28;transform:scale(1.2)}
+    .summary-card:focus-visible{outline:3px solid rgba(99,102,241,.5);outline-offset:2px}
+    .summary-card p{margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+    .summary-card strong{display:block;font-family:"Plus Jakarta Sans",Inter,sans-serif;font-size:42px;line-height:1;font-weight:800;letter-spacing:-1.5px}
+    .summary-icon{position:relative;z-index:1;width:54px;height:54px;display:grid;place-items:center;font-size:25px;border-radius:17px;background:var(--grad-soft);border:1px solid var(--border);flex-shrink:0}
+    .summary-card:nth-child(2) .summary-icon{background:var(--warn-bg)}
+    .summary-card:nth-child(3) .summary-icon{background:var(--bad-bg)}
+
+    /* ───────── Panels & forms ───────── */
+    .panel{padding:28px;margin-bottom:22px}
+    .panel h2{margin:0 0 22px;display:flex;align-items:center;gap:12px;font-family:"Plus Jakarta Sans",Inter,sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px}
+    .panel h2:before{content:"";width:5px;height:22px;border-radius:6px;background:var(--grad)}
+    .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    label{display:block;margin-bottom:8px;font-size:12.5px;font-weight:600;color:var(--text-2);letter-spacing:.2px}
+    input{width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:inherit;color:var(--text);background:var(--input-bg);transition:border-color .2s,box-shadow .2s,background .2s}
+    input::placeholder{color:var(--muted)}
+    input:hover{border-color:var(--border-strong)}
+    input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px rgba(20,184,166,.2)}
+    [data-theme="dark"] input[type="date"]{color-scheme:dark}
+    .form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+    .message{margin:16px 0 0;min-height:20px;font-size:13.5px;font-weight:500;color:var(--text-2);overflow-wrap:anywhere}
+
+    /* ───────── Buttons ───────── */
+    button{border:0;border-radius:var(--radius-sm);padding:13px 22px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:transform .18s ease,box-shadow .25s ease,filter .2s ease,background .2s ease,border-color .2s}
+    button:hover{transform:translateY(-2px)}
+    button:active{transform:translateY(0) scale(.97)}
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    button:focus-visible{outline:3px solid rgba(99,102,241,.5);outline-offset:2px}
+    .primary-button{color:#fff;background:var(--grad);box-shadow:0 12px 26px -10px rgba(99,102,241,.7)}
+    .primary-button:hover{filter:brightness(1.08);box-shadow:0 16px 32px -10px rgba(99,102,241,.8)}
+    .secondary-button{color:var(--text);background:var(--surface-2);border:1px solid var(--border)}
+    .secondary-button:hover{border-color:var(--brand);background:rgba(20,184,166,.1)}
+    .danger-button{color:var(--bad);background:var(--bad-bg);border:1px solid transparent}
+    .danger-button:hover{border-color:var(--bad)}
+    .danger-solid{color:#fff;background:linear-gradient(135deg,#f43f5e,#e11d48);box-shadow:0 12px 26px -10px rgba(225,29,72,.7)}
+    .danger-solid:hover{filter:brightness(1.08)}
+
+    /* ───────── Toolbar / chips ───────── */
+    .search-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+    .search-row input{max-width:380px;flex:1 1 240px;padding-left:44px;background:var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 15px center}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+    .chip{padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);display:inline-flex;align-items:center;gap:8px}
+    .chip b{min-width:22px;height:22px;display:inline-grid;place-items:center;padding:0 6px;border-radius:999px;background:var(--border);font-size:11.5px;font-weight:700;color:var(--text)}
+    .chip:hover{border-color:var(--brand)}
+    .chip.active{color:#fff;background:var(--grad);border-color:transparent;box-shadow:0 10px 22px -10px rgba(99,102,241,.7)}
+    .chip.active b{background:rgba(255,255,255,.26);color:#fff}
+
+    /* ───────── Table ───────── */
+    .table-wrapper{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2)}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    th,td{padding:16px 18px;text-align:left;border-bottom:1px solid var(--border);vertical-align:middle}
+    th{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+    .th-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:inherit;text-transform:inherit;letter-spacing:inherit;color:inherit;border-radius:6px}
+    .th-btn:after{content:"↕";opacity:.45;font-size:12px}
+    th[aria-sort="ascending"] .th-btn:after{content:"↑";opacity:1;color:var(--brand)}
+    th[aria-sort="descending"] .th-btn:after{content:"↓";opacity:1;color:var(--brand)}
+    th[aria-sort="ascending"],th[aria-sort="descending"]{color:var(--text)}
+    .th-btn:hover,.th-btn:active{transform:none}
+    .th-btn:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+    td{font-size:14px;color:var(--text-2)}
+    tbody tr{transition:background .2s;animation:rise .45s both}
+    tbody tr:hover{background:var(--row-hover)}
+    tbody tr:last-child td{border-bottom:0}
+    td.actions{white-space:nowrap}
+    td.actions button{margin:2px 4px 2px 0;padding:8px 14px;font-size:12.5px;border-radius:10px}
+    .cell-main{display:flex;flex-direction:column;gap:6px;min-width:110px}
+    .num{font-weight:700;color:var(--text);font-size:14.5px}
+    .sub{font-size:12px;color:var(--muted);font-weight:500}
+    .bar{height:6px;width:130px;max-width:100%;border-radius:99px;background:var(--border);overflow:hidden}
+    .bar i{display:block;height:100%;border-radius:inherit;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+    .bar-ok i{background:linear-gradient(90deg,#10b981,#14b8a6)}
+    .bar-warn i{background:linear-gradient(90deg,#f59e0b,#f97316)}
+    .bar-bad i{background:linear-gradient(90deg,#f43f5e,#ec4899)}
+    .status{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+    .status:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 22%,transparent)}
+    .status-available{background:var(--ok-bg);color:var(--ok)}
+    .status-low,.status-soon{background:var(--warn-bg);color:var(--warn)}
+    .status-expired{background:var(--bad-bg);color:var(--bad)}
+    .empty{text-align:center!important;color:var(--muted)!important;padding:48px 25px!important;font-weight:500!important}
+    .sk{height:14px;border-radius:8px;background:linear-gradient(90deg,var(--border) 0%,var(--border-strong) 50%,var(--border) 100%);background-size:200% 100%;animation:shimmer 1.3s linear infinite}
+    .print-only{display:none}
+
+
+    /* ───────── Activity history ───────── */
+    .last-updated{margin-left:auto;font-family:Inter,sans-serif;font-size:12.5px;font-weight:500;letter-spacing:0;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+    .last-updated:before{content:"";width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.2)}
+    .hist-note{margin:-10px 0 18px;font-size:13px;color:var(--muted)}
+    .hist-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+    .hist-bar .chips{margin:0}
+    .hchip{padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border)}
+    .hchip:hover{border-color:var(--brand)}
+    .hchip.active{color:#fff;background:var(--grad);border-color:transparent;box-shadow:0 10px 22px -10px rgba(99,102,241,.7)}
+    .timeline{list-style:none;margin:0;padding:0}
+    .tl-item{position:relative;display:flex;gap:14px;align-items:flex-start;padding:0 0 20px;animation:rise .4s both}
+    .tl-item:not(:last-child):before{content:"";position:absolute;left:19px;top:42px;bottom:2px;width:2px;background:var(--border)}
+    .tl-ic{width:40px;height:40px;display:grid;place-items:center;font-size:18px;border-radius:13px;flex-shrink:0;border:1px solid var(--border)}
+    .tl-ic.ic-ok{background:var(--ok-bg)}.tl-ic.ic-warn{background:var(--warn-bg)}.tl-ic.ic-info{background:var(--grad-soft)}.tl-ic.ic-danger{background:var(--bad-bg)}
+    .tl-body{flex:1;min-width:0;padding-top:2px}
+    .tl-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px;color:var(--text)}
+    .tl-title b{font-weight:700;overflow-wrap:anywhere}
+    .tl-tag{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2)}
+    .tl-detail{margin-top:3px;font-size:13px;color:var(--text-2);overflow-wrap:anywhere}
+    .tl-time{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:4px}
+    .tl-empty{padding:30px 10px;text-align:center;color:var(--muted);font-weight:500;font-size:14px}
+    #historyMore{margin-top:4px}
+    @media(max-width:560px){.tl-item{flex-wrap:wrap}.tl-time{width:100%;padding-left:54px;margin-top:-4px}}
+
+    /* ───────── Modal dialogs ───────── */
+    dialog.modal{border:0;padding:0;margin:auto;background:transparent;width:min(500px,calc(100vw - 24px));max-width:none;color:var(--text);overflow:visible}
+    dialog.modal::backdrop{background:rgba(4,7,18,.58);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:fade .25s both}
+    .modal-card{margin:0;padding:26px;background:var(--surface-solid);border:1px solid var(--border-strong);border-radius:28px;box-shadow:var(--shadow-lg);animation:pop .28s cubic-bezier(.2,.9,.3,1.2) both}
+    .modal-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+    .modal-ic{width:48px;height:48px;display:grid;place-items:center;font-size:22px;border-radius:15px;flex-shrink:0}
+    .ic-info{background:var(--grad-soft)}.ic-ok{background:var(--ok-bg)}.ic-warn{background:var(--warn-bg)}.ic-danger{background:var(--bad-bg)}
+    .modal-titles{flex:1;min-width:0}
+    .modal-titles h3{margin:2px 0 3px;font-family:"Plus Jakarta Sans",Inter,sans-serif;font-size:20px;letter-spacing:-.3px}
+    .modal-titles p{margin:0;font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+    .modal-x{width:34px;height:34px;font-size:13px;flex-shrink:0}
+    .modal-msg{margin:0 0 6px;font-size:14.5px;line-height:1.6;color:var(--text-2)}
+    .modal-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field{grid-column:1/-1}.field.half{grid-column:auto}
+    .quick{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .chip-sm{padding:7px 13px;border-radius:999px;font-size:12.5px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2)}
+    .chip-sm:hover{border-color:var(--brand)}
+    .modal-preview{margin-top:16px;padding:12px 14px;border-radius:12px;font-size:13.5px;font-weight:600}
+    .modal-preview.ok{background:var(--ok-bg);color:var(--ok)}
+    .modal-preview.bad{background:var(--warn-bg);color:var(--warn)}
+    .modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;flex-wrap:wrap}
+
+    .chip-hist{padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-2);background:var(--grad-soft);border:1px solid var(--border-strong);display:inline-flex;align-items:center;gap:8px}
+    .chip-hist b{min-width:22px;height:22px;display:inline-grid;place-items:center;padding:0 6px;border-radius:999px;background:var(--border);font-size:11.5px;font-weight:700;color:var(--text)}
+    .chip-hist:hover{border-color:var(--brand-2)}
+    dialog.modal.hist-dialog{width:min(680px,calc(100vw - 24px))}
+    .hist-card{display:flex;flex-direction:column;max-height:min(86vh,760px)}
+    .hist-card .hist-bar{margin-bottom:14px}
+    .hist-scroll{overflow-y:auto;min-height:120px;margin:0 -8px;padding:6px 8px 0;overscroll-behavior:contain}
+    @media(max-width:560px){dialog.modal.hist-dialog{width:100vw}.hist-card{max-height:88vh}}
+    /* ───────── Toasts ───────── */
+    #toasts{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 36px));pointer-events:none}
+    .toast{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:16px;background:var(--surface-solid);border:1px solid var(--border-strong);box-shadow:var(--shadow-lg);font-size:14px;font-weight:500;animation:slidein .35s cubic-bezier(.2,.9,.3,1.1) both;transition:opacity .25s,transform .25s}
+    .toast.out{opacity:0;transform:translateX(30px)}
+    .toast-ic{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;font-size:14px;font-weight:800;flex-shrink:0}
+    .toast.success .toast-ic{background:var(--ok-bg);color:var(--ok)}
+    .toast.error .toast-ic{background:var(--bad-bg);color:var(--bad)}
+    .toast.warn .toast-ic{background:var(--warn-bg);color:var(--warn)}
+    .toast.info .toast-ic{background:var(--grad-soft);color:var(--brand-2)}
+    .toast-tx{flex:1;overflow-wrap:anywhere;line-height:1.4}
+    .toast-x{padding:4px 8px;font-size:12px;background:transparent;color:var(--muted)}
+
+    footer{text-align:center;color:var(--muted);font-size:12.5px;padding:26px 16px 36px}
+    footer b{color:var(--text-2)}
+    footer kbd{font-family:inherit;font-size:11px;padding:2px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border-strong)}
+    [hidden]{display:none!important}
+
+    @media(max-width:900px){.features{grid-template-columns:1fr}}
+    @media(max-width:760px){
+      header{top:8px;padding:0 10px}
+      .brand{border-radius:24px;padding:10px}
+      .brand p{display:none}
+      .auth-actions{gap:8px}.auth-actions span{display:none}
+      .summary,.form-grid{grid-template-columns:1fr}
+      main{padding:22px 12px 10px}.panel{padding:20px}
+      #welcome{padding-top:40px}
+      .alert-banner{flex-wrap:wrap}.alert-banner > button{margin-left:0;width:100%}
+    }
+    @media screen and (max-width:760px){
+      /* Table becomes stacked cards on phones */
+      .table-wrapper{border:0;background:transparent;overflow:visible}
+      table,tbody{display:block;min-width:0}
+      thead{display:none}
+      tbody tr{display:block;margin-bottom:12px;padding:6px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2)}
+      td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--border)}
+      td:nth-child(2):before{content:"Quantity"}td:nth-child(3):before{content:"Expiry"}td:nth-child(4):before{content:"Status"}
+      td:before{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+      td:first-child{padding-top:12px}
+      td:nth-child(2) .cell-main,td:nth-child(3) .cell-main{align-items:flex-end;text-align:right}
+      td.actions{display:flex;flex-wrap:wrap;border-bottom:0;padding-bottom:12px}
+      td.actions button{flex:1 1 40%}
+      td.empty{display:block}td.empty:before{content:none}
+      tr.sk-row td:before{content:none}
+      tr.sk-row .sk{width:100%!important}
+      #toasts{left:50%;right:auto;transform:translateX(-50%);bottom:12px}
+    }
+    @media(max-width:560px){
+      dialog.modal{margin:auto 0 0;width:100vw}
+      .modal-card{border-radius:26px 26px 0 0;padding:22px 20px 26px}
+      .modal-foot button{flex:1}
+    }
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+    /* ───────── Print view ───────── */
+    @media print{
+      :root,[data-theme="dark"]{--text:#000;--text-2:#222;--muted:#555;--border:#ccc;--border-strong:#999;--surface:#fff;--surface-2:#fff;--surface-solid:#fff;--bg:#fff;--bg-2:#fff;--ok:#047857;--ok-bg:#d1fae5;--warn:#92400e;--warn-bg:#fef3c7;--bad:#be123c;--bad-bg:#ffe4e6}
+      body{background:#fff}
+      .aurora,.grain,header,#authBanner,#welcome,footer,.summary,.alert-banner,#addPanel,#historyPanel,.toolbar,.chips,#toasts,dialog{display:none!important}
+      main{padding:0;max-width:none;animation:none}
+      .panel{box-shadow:none;border:0;padding:0;background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}
+      .panel h2{display:none}
+      .print-only{display:block;margin-bottom:14px}
+      .print-only h2{display:block;margin:0 0 4px;font-size:20px}
+      .print-only h2:before{display:none}
+      .print-only p{margin:0;font-size:12px;color:#555}
+      .table-wrapper{overflow:visible;border:1px solid #ccc}
+      table{min-width:0}
+      th:nth-child(5),td:nth-child(5){display:none}
+      th{position:static}
+      .th-btn:after{content:none!important}
+      tr{break-inside:avoid;animation:none!important}
+      .bar,.bar i,.status{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    }
+  </style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">💊</div>
+      <div>
+        <h1>Alert<b>+</b></h1>
+        <p>Medicine Stock and Expiry Management</p>
+      </div>
+      <div class="auth-actions">
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle light and dark theme" title="Toggle theme">🌙</button>
+        <span id="userStatus">Not logged in</span>
+        <button id="loginButton" class="auth-button" type="button">Login</button>
+        <button id="logoutButton" class="auth-button" type="button" hidden>Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Visible login / session error banner -->
+  <div class="auth-banner" id="authBanner" role="alert" hidden>
+    <div class="auth-banner-in">
+      <span class="ab-ic" aria-hidden="true">⚠️</span>
+      <span id="authBannerText"></span>
+      <button type="button" id="authBannerClose" aria-label="Dismiss">✕</button>
+    </div>
+  </div>
+
+  <main id="appContent" hidden>
+    <!-- Smart alert banner -->
+    <div class="alert-banner" id="alertBanner" hidden>
+      <div class="alert-ic" id="alertIcon" aria-hidden="true">⚠️</div>
+      <div><strong id="alertTitle"></strong><span class="t" id="alertText"></span></div>
+      <button class="secondary-button" type="button" id="alertAction">Review</button>
+    </div>
+
+    <section class="summary">
+      <div class="summary-card" data-filter="all" role="button" tabindex="0" aria-label="Show all medicines"><div><p>Total medicine records</p><strong id="totalCount">0</strong></div><div class="summary-icon" aria-hidden="true">📦</div></div>
+      <div class="summary-card" data-filter="low" role="button" tabindex="0" aria-label="Show low-stock medicines"><div><p>Low-stock medicines</p><strong id="lowCount">0</strong></div><div class="summary-icon" aria-hidden="true">⚠️</div></div>
+      <div class="summary-card" data-filter="expired" role="button" tabindex="0" aria-label="Show expired medicines"><div><p>Expired medicines</p><strong id="expiredCount">0</strong></div><div class="summary-icon" aria-hidden="true">⏳</div></div>
+    </section>
+
+    <section class="panel" id="addPanel">
+      <h2>Add Medicine</h2>
+      <form id="medicineForm">
+        <div class="form-grid">
+          <div><label for="medicineName">Medicine Name</label><input type="text" id="medicineName" placeholder="e.g. Paracetamol" required></div>
+          <div><label for="quantity">Quantity</label><input type="number" id="quantity" min="0" step="1" placeholder="e.g. 25" required></div>
+          <div><label for="expiryDate">Expiry Date</label><input type="date" id="expiryDate" required></div>
+        </div>
+        <div class="form-actions">
+          <button class="primary-button" id="addButton" type="submit">＋ Add Medicine</button>
+          <button class="secondary-button" type="button" id="viewButton">View Medicines</button>
+        </div>
+        <p class="message" id="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="panel" id="inventoryPanel">
+      <h2>Medicine Inventory <span class="last-updated" id="lastUpdated" hidden></span></h2>
+      <div class="print-only"><h2>Alert+ — Medicine Inventory</h2><p id="printMeta"></p></div>
+      <div class="search-row toolbar">
+        <input type="search" id="searchMedicine" placeholder="Search medicine name...  ( press / )" aria-label="Search medicine">
+        <button class="secondary-button" type="button" id="refreshButton">↻ Refresh</button>
+        <button class="primary-button" type="button" id="exportCsvButton">Export CSV</button>
+        <button class="secondary-button" type="button" id="backupJsonButton">Backup JSON</button>
+        <button class="secondary-button" type="button" id="printButton">🖨 Print</button>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Filter medicines">
+        <button class="chip" type="button" data-filter="all" aria-pressed="false">All <b id="cAll">0</b></button>
+        <button class="chip" type="button" data-filter="available" aria-pressed="false">Available <b id="cAvailable">0</b></button>
+        <button class="chip" type="button" data-filter="low" aria-pressed="false">Low stock <b id="cLow">0</b></button>
+        <button class="chip" type="button" data-filter="soon" aria-pressed="false">Expiring soon <b id="cSoon">0</b></button>
+        <button class="chip" type="button" data-filter="expired" aria-pressed="false">Expired <b id="cExpired">0</b></button>
+        <button class="chip-hist" type="button" id="openHistory" aria-haspopup="dialog">🕘 History <b id="cHist">0</b></button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="name" aria-sort="none"><button class="th-btn" type="button">Medicine</button></th>
+              <th data-sort="quantity" aria-sort="none"><button class="th-btn" type="button">Quantity</button></th>
+              <th data-sort="expiry" aria-sort="ascending"><button class="th-btn" type="button">Expiry Date</button></th>
+              <th data-sort="status" aria-sort="none"><button class="th-btn" type="button">Status</button></th>
+              <th>Manage</th>
+            </tr>
+          </thead>
+          <tbody id="medicineTable"><tr><td colspan="5" class="empty">Please login to access inventory.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Logged-out landing (visible only while the app is hidden) -->
+  <section id="welcome">
+    <span class="pill">Secure · Cloud-synced · Real-time status</span>
+    <h2>Never let a medicine <em>expire</em> unnoticed.</h2>
+    <p class="lead">Track stock, catch low quantities and see expiry dates at a glance — all in one clean, secure dashboard.</p>
+    <button class="cta" id="welcomeLogin" type="button">Login to get started →</button>
+
+
+    <div class="features">
+      <div class="feature"><div class="ic">⏰</div><h3>Expiry alerts</h3><p>Instantly spot expired and soon-to-expire medicines with clear colour-coded badges.</p></div>
+      <div class="feature"><div class="ic">📉</div><h3>Low-stock tracking</h3><p>Stock in and out with one tap and see what needs reordering before it runs out.</p></div>
+      <div class="feature"><div class="ic">🔐</div><h3>Private &amp; backed up</h3><p>Protected sign-in, one active device session, plus CSV export and JSON backup anytime.</p></div>
+    </div>
+  </section>
+
+  <!-- Activity history pop-up (opened from the History button beside the filter chips) -->
+  <dialog class="modal hist-dialog" id="historyDialog" aria-labelledby="historyTitle">
+    <div class="modal-card hist-card">
+      <div class="modal-head">
+        <div class="modal-ic ic-info" aria-hidden="true">🕘</div>
+        <div class="modal-titles">
+          <h3 id="historyTitle">Activity History</h3>
+          <p>Every add, stock change, edit and delete. Saved on this device only.</p>
+        </div>
+        <button class="icon-btn modal-x" type="button" id="historyClose" aria-label="Close history">✕</button>
+      </div>
+      <div class="hist-bar">
+        <div class="chips" id="hChips" role="group" aria-label="Filter activity">
+          <button class="hchip active" type="button" data-hfilter="all" aria-pressed="true">All</button>
+          <button class="hchip" type="button" data-hfilter="add" aria-pressed="false">Added</button>
+          <button class="hchip" type="button" data-hfilter="stock" aria-pressed="false">Stock</button>
+          <button class="hchip" type="button" data-hfilter="edit" aria-pressed="false">Edited</button>
+          <button class="hchip" type="button" data-hfilter="delete" aria-pressed="false">Deleted</button>
+        </div>
+        <button class="danger-button" type="button" id="clearHistory">Clear history</button>
+      </div>
+      <div class="hist-scroll">
+        <ol class="timeline" id="historyList"></ol>
+        <button class="secondary-button" type="button" id="historyMore" hidden>Show more</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <footer><b>Alert+</b> · Secure medicine inventory · Press <kbd>/</kbd> to search</footer>
+
+  <script>
+    "use strict";
+
+    // AWS API Gateway
+    const API_URL = "https://vgtmgl32xh.execute-api.ap-south-1.amazonaws.com";
+    const MEDICINES_ENDPOINT = `${API_URL}/medicines`;
+
+    // Amazon Cognito - verify this domain in Cognito > App integration > Domain.
+    const COGNITO_DOMAIN = "https://ap-south-1wzcwz2xv3.auth.ap-south-1.amazoncognito.com";
+    const CLIENT_ID = "73qfbr6l2aidom78kd8u2pvrgg";
+    const REDIRECT_URI = "https://alertplus.online/";
+    const LOGOUT_URI = "https://alertplus.online/";
+
+    const AUTH_ENDPOINT = `${COGNITO_DOMAIN}/oauth2/authorize`;
+    const TOKEN_ENDPOINT = `${COGNITO_DOMAIN}/oauth2/token`;
+    const LOGOUT_ENDPOINT = `${COGNITO_DOMAIN}/logout`;
+
+    const TOKEN_KEY = "medistock_access_token";
+    const EXPIRY_KEY = "medistock_token_expiry";
+    const VERIFIER_KEY = "medistock_pkce_verifier";
+    const STATE_KEY = "medistock_oauth_state";
+    const SESSION_KEY = "medistock_active_session_id";
+
+    const $ = id => document.getElementById(id);
+    const form = $("medicineForm");
+    const message = $("message");
+    const table = $("medicineTable");
+    const totalCount = $("totalCount");
+    const lowCount = $("lowCount");
+    const expiredCount = $("expiredCount");
+    const searchInput = $("searchMedicine");
+    const addButton = $("addButton");
+    const loginButton = $("loginButton");
+    const logoutButton = $("logoutButton");
+    const userStatus = $("userStatus");
+    const appContent = $("appContent");
+
+    // UI state (display only — nothing here touches AWS)
+    const alertBanner = $("alertBanner");
+    const authBanner = $("authBanner");
+    const authBannerText = $("authBannerText");
+    const toastBox = $("toasts");
+    const STATUS_RANK = { "Expired": 0, "Expiring soon": 1, "Low stock": 2, "Available": 3, "Unknown": 4 };
+    let medicines = [];
+    let currentFilter = null;   // nothing shown until a filter chip is clicked
+    let sortKey = "expiry";
+    let sortDir = 1;
+    let lastShown = 0;
+    let lastLoadedAt = null;
+
+    function paintLastUpdated() {
+      const node = $("lastUpdated");
+      if (!node || !lastLoadedAt) return;
+      const s = Math.round((Date.now() - lastLoadedAt.getTime()) / 1000);
+      const clock = lastLoadedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+      node.textContent = `Updated ${clock}` + (s < 45 ? " · just now" : s < 3600 ? ` · ${Math.round(s / 60)} min ago` : "");
+      node.hidden = false;
+    }
+    setInterval(paintLastUpdated, 30000);
+
+    /* ───────────────────────── UI helpers ───────────────────────── */
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function toast(text, type = "success", ms = 4200) {
+      const icons = { success: "✓", error: "!", warn: "⚠", info: "i" };
+      const t = el("div", `toast ${type}`);
+      t.setAttribute("role", type === "error" ? "alert" : "status");
+      const close = el("button", "toast-x", "✕");
+      close.type = "button";
+      close.setAttribute("aria-label", "Dismiss");
+      t.append(el("span", "toast-ic", icons[type] || "i"), el("span", "toast-tx", text), close);
+      toastBox.append(t);
+      while (toastBox.children.length > 4) toastBox.firstElementChild.remove();
+      const kill = () => { t.classList.add("out"); setTimeout(() => t.remove(), 260); };
+      close.addEventListener("click", kill);
+      setTimeout(kill, ms);
+    }
+
+    function showAuthError(text) {
+      authBannerText.textContent = text;
+      authBanner.hidden = false;
+    }
+    function hideAuthError() { authBanner.hidden = true; }
+    $("authBannerClose").addEventListener("click", hideAuthError);
+
+    function reportError(prefix, error) {
+      // If the session is gone the login banner already explains it.
+      if (!getAccessToken()) return;
+      toast(`${prefix}: ${error.message}`, "error", 6000);
+    }
+
+    function animateNumber(node, to) {
+      const from = Number(node.dataset.v || 0);
+      node.dataset.v = String(to);
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce || from === to) { node.textContent = String(to); return; }
+      const token = Symbol();
+      node._anim = token;
+      const start = performance.now(), dur = 700;
+      const step = now => {
+        if (node._anim !== token) return;
+        const p = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        node.textContent = String(Math.round(from + (to - from) * eased));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // Promise-based modal dialog (replaces prompt / confirm)
+    function openModal(opts) {
+      return new Promise(resolve => {
+        const dlg = el("dialog", "modal");
+        const card = el("form", "modal-card");
+
+        const head = el("div", "modal-head");
+        const ic = el("div", `modal-ic ic-${opts.tone || "info"}`, opts.icon || "ℹ️");
+        const titles = el("div", "modal-titles");
+        titles.append(el("h3", "", opts.title));
+        if (opts.subtitle) titles.append(el("p", "", opts.subtitle));
+        const x = el("button", "icon-btn modal-x", "✕");
+        x.type = "button";
+        x.setAttribute("aria-label", "Close");
+        head.append(ic, titles, x);
+        card.append(head);
+
+        if (opts.message) card.append(el("p", "modal-msg", opts.message));
+
+        const inputs = {};
+        const fields = opts.fields || [];
+        if (fields.length) {
+          const grid = el("div", "modal-fields");
+          fields.forEach(f => {
+            const wrap = el("div", "field" + (f.half ? " half" : ""));
+            const lab = el("label", "", f.label);
+            lab.htmlFor = "mf_" + f.id;
+            const inp = document.createElement("input");
+            inp.id = "mf_" + f.id;
+            inp.type = f.type || "text";
+            if (f.value !== undefined) inp.value = f.value;
+            ["min", "max", "step", "placeholder"].forEach(k => { if (f[k] !== undefined) inp.setAttribute(k, f[k]); });
+            if (f.required) inp.required = true;
+            inputs[f.id] = inp;
+            wrap.append(lab, inp);
+            grid.append(wrap);
+          });
+          card.append(grid);
+        }
+
+        if (opts.chips && fields.length) {
+          const row = el("div", "quick");
+          opts.chips.forEach(n => {
+            const b = el("button", "chip-sm", `+${n}`);
+            b.type = "button";
+            b.addEventListener("click", () => {
+              const inp = inputs[fields[0].id];
+              inp.value = String((Number(inp.value) || 0) + n);
+              inp.dispatchEvent(new Event("input", { bubbles: true }));
+              inp.focus();
+            });
+            row.append(b);
+          });
+          card.append(row);
+        }
+
+        let preview = null;
+        if (opts.preview) { preview = el("div", "modal-preview"); card.append(preview); }
+
+        const foot = el("div", "modal-foot");
+        const cancel = el("button", "secondary-button", opts.cancelText || "Cancel");
+        cancel.type = "button";
+        const ok = el("button", opts.danger ? "danger-solid" : "primary-button", opts.confirmText || "Confirm");
+        ok.type = "submit";
+        foot.append(cancel, ok);
+        card.append(foot);
+        dlg.append(card);
+        document.body.append(dlg);
+
+        const read = () => {
+          const v = {};
+          fields.forEach(f => {
+            const raw = inputs[f.id].value;
+            v[f.id] = f.type === "number" ? (raw === "" ? NaN : Number(raw)) : raw.trim();
+          });
+          return v;
+        };
+        const refresh = () => {
+          if (!preview) return;
+          const r = opts.preview(read());
+          preview.className = "modal-preview " + (r.ok ? "ok" : "bad");
+          preview.textContent = r.text;
+          ok.disabled = !r.ok;
+        };
+        card.addEventListener("input", refresh);
+        refresh();
+
+        let done = false;
+        const finish = value => {
+          if (done) return;
+          done = true;
+          if (dlg.open) dlg.close();
+          dlg.remove();
+          resolve(value);
+        };
+        card.addEventListener("submit", e => { e.preventDefault(); finish(read()); });
+        cancel.addEventListener("click", () => finish(null));
+        x.addEventListener("click", () => finish(null));
+        dlg.addEventListener("close", () => finish(null));
+        dlg.addEventListener("click", e => { if (e.target === dlg) finish(null); });
+
+        dlg.showModal();
+        const first = fields.length ? inputs[fields[0].id] : null;
+        if (first) { first.focus(); try { first.select(); } catch (e) {} } else { ok.focus(); }
+      });
+    }
+
+    /* ───────────────────────── Activity history (stored in this browser only) ───────────────────────── */
+
+    const HISTORY_KEY = "alertplus_activity_v1";
+    const HISTORY_LIMIT = 300;
+    const HISTORY_META = {
+      add:    { icon: "➕", tone: "ok",     label: "Added" },
+      in:     { icon: "📥", tone: "ok",     label: "Stock in" },
+      out:    { icon: "📤", tone: "warn",   label: "Stock out" },
+      edit:   { icon: "✏️", tone: "info",   label: "Edited" },
+      delete: { icon: "🗑️", tone: "danger", label: "Deleted" }
+    };
+    let historyFilter = "all";
+    let historyShown = 8;
+
+    function readHistory() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        return Array.isArray(raw) ? raw : [];
+      } catch (e) { return []; }
+    }
+
+    function logActivity(type, name, detail) {
+      // Never let logging interfere with the real operation.
+      try {
+        const list = readHistory();
+        list.unshift({ t: new Date().toISOString(), type, name: String(name || "—"), detail: String(detail || "") });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_LIMIT)));
+        renderHistory();
+      } catch (e) { console.warn("History not saved:", e); }
+    }
+
+    function timeAgo(iso) {
+      const then = new Date(iso).getTime();
+      if (Number.isNaN(then)) return "";
+      const s = Math.max(0, Math.round((Date.now() - then) / 1000));
+      if (s < 45) return "just now";
+      const m = Math.round(s / 60);
+      if (m < 60) return `${m} min ago`;
+      const hr = Math.round(m / 60);
+      if (hr < 24) return `${hr} hour${hr === 1 ? "" : "s"} ago`;
+      const d = Math.round(hr / 24);
+      if (d < 7) return `${d} day${d === 1 ? "" : "s"} ago`;
+      return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    function renderHistory() {
+      const list = $("historyList");
+      if (!list) return;
+      const all = readHistory();
+      if ($("cHist")) $("cHist").textContent = all.length;
+      const items = all.filter(e => historyFilter === "all" || (historyFilter === "stock" ? (e.type === "in" || e.type === "out") : e.type === historyFilter));
+      list.replaceChildren();
+      $("clearHistory").disabled = !all.length;
+
+      if (!items.length) {
+        list.append(el("li", "tl-empty", all.length ? "No activity of this type yet." : "No activity yet. Add or change a medicine and it will show up here."));
+        $("historyMore").hidden = true;
+        return;
+      }
+
+      items.slice(0, historyShown).forEach((entry, i) => {
+        const meta = HISTORY_META[entry.type] || { icon: "•", tone: "info", label: entry.type };
+        const li = el("li", "tl-item");
+        li.style.animationDelay = `${Math.min(i, 10) * 30}ms`;
+        const body = el("div", "tl-body");
+        const title = el("div", "tl-title");
+        title.append(el("b", "", entry.name), el("span", "tl-tag", meta.label));
+        body.append(title);
+        if (entry.detail) body.append(el("div", "tl-detail", entry.detail));
+        const time = el("time", "tl-time", timeAgo(entry.t));
+        time.dateTime = entry.t;
+        time.title = new Date(entry.t).toLocaleString("en-IN");
+        li.append(el("span", `tl-ic ic-${meta.tone}`, meta.icon), body, time);
+        list.append(li);
+      });
+
+      const more = items.length - historyShown;
+      $("historyMore").hidden = more <= 0;
+      if (more > 0) $("historyMore").textContent = `Show more (${more} older)`;
+    }
+
+    /* ───────────────────────── AUTH (unchanged) ───────────────────────── */
+
+    function base64UrlEncode(buffer) {
+      let binary = "";
+      new Uint8Array(buffer).forEach(byte => binary += String.fromCharCode(byte));
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+
+    function randomString(length = 64) {
+      return base64UrlEncode(crypto.getRandomValues(new Uint8Array(length)));
+    }
+
+    async function generateCodeChallenge(verifier) {
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+      return base64UrlEncode(digest);
+    }
+
+    async function login() {
+      try {
+        if (!window.crypto?.subtle) {
+          throw new Error("Secure browser cryptography unavailable. Open the HTTPS website.");
+        }
+        const verifier = randomString(64);
+        const state = randomString(32);
+        const challenge = await generateCodeChallenge(verifier);
+
+        sessionStorage.setItem(VERIFIER_KEY, verifier);
+        sessionStorage.setItem(STATE_KEY, state);
+
+        const params = new URLSearchParams({
+          client_id: CLIENT_ID,
+          response_type: "code",
+          scope: "openid email profile",
+          redirect_uri: REDIRECT_URI,
+          state,
+          prompt: "login",
+          code_challenge_method: "S256",
+          code_challenge: challenge
+        });
+        window.location.assign(`${AUTH_ENDPOINT}?${params.toString()}`);
+      } catch (error) {
+        console.error("Login start failed:", error);
+        showAuthError(`Unable to start login: ${error.message}`);
+      }
+    }
+
+    function createSessionId() {
+      if (crypto.randomUUID) return crypto.randomUUID();
+      return randomString(48);
+    }
+
+    async function registerActiveSession(token, sessionId) {
+      const response = await fetch(`${API_URL}/session`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-Session-Id": sessionId
+        },
+        body: JSON.stringify({})
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Session registration failed (${response.status}).`);
+      }
+      return data;
+    }
+
+    async function handleCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      const authError = params.get("error");
+
+      if (authError) {
+        const description = params.get("error_description") || authError;
+        window.history.replaceState({}, document.title, REDIRECT_URI);
+        throw new Error(description);
+      }
+      if (!code) return false;
+
+      const returnedState = params.get("state");
+      const savedState = sessionStorage.getItem(STATE_KEY);
+      const verifier = sessionStorage.getItem(VERIFIER_KEY);
+
+      if (!savedState || !returnedState || returnedState !== savedState || !verifier) {
+        window.history.replaceState({}, document.title, REDIRECT_URI);
+        throw new Error("Login state verification failed. Please login again.");
+      }
+
+      // Remove the one-time authorization code from the visible URL.
+      window.history.replaceState({}, document.title, REDIRECT_URI);
+
+      const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: CLIENT_ID,
+        code,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: verifier
+      });
+
+      const response = await fetch(TOKEN_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error_description || data.error || `Token exchange failed (${response.status}).`);
+      }
+      if (!data.access_token || !Number.isFinite(Number(data.expires_in))) {
+        throw new Error("Cognito did not return a valid access token.");
+      }
+
+      const newSessionId = createSessionId();
+      sessionStorage.setItem(TOKEN_KEY, data.access_token);
+      sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + Number(data.expires_in) * 1000));
+      localStorage.setItem(SESSION_KEY, newSessionId);
+
+      try {
+        await registerActiveSession(data.access_token, newSessionId);
+      } catch (error) {
+        clearSession();
+        throw error;
+      }
+
+      sessionStorage.removeItem(VERIFIER_KEY);
+      sessionStorage.removeItem(STATE_KEY);
+      return true;
+    }
+
+    function clearSession() {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(EXPIRY_KEY);
+      sessionStorage.removeItem(VERIFIER_KEY);
+      sessionStorage.removeItem(STATE_KEY);
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    function getAccessToken() {
+      const token = sessionStorage.getItem(TOKEN_KEY);
+      const expiry = Number(sessionStorage.getItem(EXPIRY_KEY));
+      if (!token || !expiry || Date.now() >= expiry - 30000) {
+        if (token || expiry) clearSession();
+        return null;
+      }
+      return token;
+    }
+
+    function logout() {
+      clearSession();
+      showLoginScreen();
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        logout_uri: LOGOUT_URI
+      });
+      window.location.assign(`${LOGOUT_ENDPOINT}?${params.toString()}`);
+    }
+
+    function showAuthenticatedApp() {
+      loginButton.hidden = true;
+      logoutButton.hidden = false;
+      userStatus.textContent = "Authenticated";
+      appContent.hidden = false;
+      document.body.classList.add("authed");
+      hideAuthError();
+    }
+
+    function showLoginScreen() {
+      loginButton.hidden = false;
+      logoutButton.hidden = true;
+      userStatus.textContent = "Not logged in";
+      appContent.hidden = true;
+      document.body.classList.remove("authed");
+      medicines = [];
+      lastLoadedAt = null;
+      if ($("lastUpdated")) $("lastUpdated").hidden = true;
+      updateSummary();
+      table.innerHTML = '<tr><td colspan="5" class="empty">Please login to access inventory.</td></tr>';
+    }
+
+    async function readResponse(response) {
+      const raw = await response.text();
+      let data = null;
+      if (raw) {
+        try { data = JSON.parse(raw); }
+        catch { data = { message: raw }; }
+      }
+      if (!response.ok) {
+        const detail = data && (data.error || data.message);
+        throw new Error(detail || `HTTP ${response.status} ${response.statusText}`);
+      }
+      return data;
+    }
+
+    async function callMedicineAPI(url, method, body) {
+      const token = getAccessToken();
+      if (!token) {
+        showLoginScreen();
+        showAuthError("Your session expired. Please log in again.");
+        throw new Error("Session expired. Please login again.");
+      }
+      const sessionId = localStorage.getItem(SESSION_KEY);
+      if (!sessionId) {
+        clearSession();
+        showLoginScreen();
+        showAuthError("Your login session is missing. Please log in again.");
+        throw new Error("Login session is missing. Please log in again.");
+      }
+
+      const options = {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "X-Session-Id": sessionId
+        }
+      };
+      if (body !== undefined) options.body = JSON.stringify(body);
+      const response = await fetch(url, options);
+
+      if (response.status === 401 || response.status === 403) {
+        const data = await response.json().catch(() => ({}));
+
+        if (data.code === "SESSION_REPLACED") {
+          clearSession();
+          showLoginScreen();
+          message.textContent = "Your account was signed in on another device. Please log in again.";
+          showAuthError("Your account was signed in on another device. Please log in again.");
+          throw new Error(data.error || "Your session was replaced by another device.");
+        }
+
+        throw new Error(data.error || "API authorization failed. Please log in again.");
+      }
+
+      return readResponse(response);
+    }
+
+    /* ───────────────────────── Inventory helpers ───────────────────────── */
+
+    function getMedicineName(medicine) {
+      return String(medicine.medicineName ?? medicine.name ?? "").trim();
+    }
+
+    function getMedicineStatus(medicine) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const parts = String(medicine.expiryDate || "").split("-").map(Number);
+      const expiry = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(NaN);
+      if (Number.isNaN(expiry.getTime())) return { label: "Unknown", css: "status-low" };
+      expiry.setHours(0, 0, 0, 0);
+      const daysLeft = Math.round((expiry.getTime() - today.getTime()) / 86400000);
+      if (daysLeft < 0) return { label: "Expired", css: "status-expired" };
+      if (daysLeft <= 30) return { label: "Expiring soon", css: "status-soon" };
+      if (Number(medicine.quantity) <= Number(medicine.reorderLevel ?? 10)) return { label: "Low stock", css: "status-low" };
+      return { label: "Available", css: "status-available" };
+    }
+
+    // Display-only helpers
+    function getDaysLeft(medicine) {
+      const parts = String(medicine.expiryDate || "").split("-").map(Number);
+      if (parts.length !== 3) return null;
+      const expiry = new Date(parts[0], parts[1] - 1, parts[2]);
+      if (Number.isNaN(expiry.getTime())) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expiry.setHours(0, 0, 0, 0);
+      return Math.round((expiry.getTime() - today.getTime()) / 86400000);
+    }
+
+    function daysLeftText(d) {
+      if (d === null) return "No valid date";
+      if (d < 0) { const n = Math.abs(d); return `Expired ${n} day${n === 1 ? "" : "s"} ago`; }
+      if (d === 0) return "Expires today";
+      if (d === 1) return "1 day left";
+      if (d >= 90) return `~${Math.round(d / 30)} months left`;
+      return `${d} days left`;
+    }
+
+    function formatDate(medicine) {
+      const parts = String(medicine.expiryDate || "").split("-").map(Number);
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      }
+      return medicine.expiryDate || "—";
+    }
+
+    function makeBar(percent, tone) {
+      const bar = el("div", `bar bar-${tone}`);
+      const fill = document.createElement("i");
+      fill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+      bar.append(fill);
+      return bar;
+    }
+
+    function isLow(m) { return Number(m.quantity) <= Number(m.reorderLevel ?? 10); }
+
+    function matchesFilter(m) {
+      if (currentFilter === null || currentFilter === "all") return true;
+      if (currentFilter === "low") return isLow(m);
+      const label = getMedicineStatus(m).label;
+      if (currentFilter === "available") return label === "Available";
+      if (currentFilter === "soon") return label === "Expiring soon";
+      if (currentFilter === "expired") return label === "Expired";
+      return true;
+    }
+
+    function sortValue(m, key) {
+      switch (key) {
+        case "name": return getMedicineName(m).toLowerCase();
+        case "quantity": return Number(m.quantity) || 0;
+        case "expiry": { const d = getDaysLeft(m); return d === null ? Infinity : d; }
+        case "status": return STATUS_RANK[getMedicineStatus(m).label] ?? 9;
+        default: return 0;
+      }
+    }
+
+    function compareMedicines(a, b) {
+      const va = sortValue(a, sortKey), vb = sortValue(b, sortKey);
+      let result = typeof va === "string" ? va.localeCompare(vb) : (va === vb ? 0 : va < vb ? -1 : 1);
+      if (result === 0) result = getMedicineName(a).toLowerCase().localeCompare(getMedicineName(b).toLowerCase());
+      return result * sortDir;
+    }
+
+    function setFilter(filter, scroll) {
+      currentFilter = filter;
+      document.querySelectorAll(".chip").forEach(chip => {
+        const active = chip.dataset.filter === filter;
+        chip.classList.toggle("active", active);
+        chip.setAttribute("aria-pressed", String(active));
+      });
+      renderMedicines();
+      if (scroll) $("inventoryPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function updateSortHeaders() {
+      document.querySelectorAll("th[data-sort]").forEach(th => {
+        th.setAttribute("aria-sort", th.dataset.sort === sortKey ? (sortDir === 1 ? "ascending" : "descending") : "none");
+      });
+    }
+
+    function updateAlertBanner(counts) {
+      if (!medicines.length) { alertBanner.hidden = true; return; }
+      const parts = [];
+      if (counts.expired) parts.push(`${counts.expired} expired`);
+      if (counts.soon) parts.push(`${counts.soon} expiring within 30 days`);
+      if (counts.low) parts.push(`${counts.low} low on stock`);
+      const icon = $("alertIcon"), action = $("alertAction");
+      alertBanner.hidden = false;
+      if (!parts.length) {
+        alertBanner.className = "alert-banner ok";
+        icon.textContent = "✅";
+        $("alertTitle").textContent = "All clear";
+        $("alertText").textContent = "Every medicine is in date and well stocked.";
+        action.hidden = true;
+        return;
+      }
+      alertBanner.className = "alert-banner " + (counts.expired ? "danger" : "warn");
+      icon.textContent = counts.expired ? "🚨" : "⚠️";
+      $("alertTitle").textContent = "Needs your attention";
+      $("alertText").textContent = parts.join("  ·  ");
+      action.hidden = false;
+      action.dataset.filter = counts.expired ? "expired" : counts.soon ? "soon" : "low";
+    }
+
+    function updateSummary() {
+      const counts = {
+        all: medicines.length,
+        low: medicines.filter(isLow).length,
+        available: medicines.filter(m => getMedicineStatus(m).label === "Available").length,
+        soon: medicines.filter(m => getMedicineStatus(m).label === "Expiring soon").length,
+        expired: medicines.filter(m => getMedicineStatus(m).label === "Expired").length
+      };
+      animateNumber(totalCount, counts.all);
+      animateNumber(lowCount, counts.low);
+      animateNumber(expiredCount, counts.expired);
+      $("cAll").textContent = counts.all;
+      $("cAvailable").textContent = counts.available;
+      $("cLow").textContent = counts.low;
+      $("cSoon").textContent = counts.soon;
+      $("cExpired").textContent = counts.expired;
+      updateAlertBanner(counts);
+    }
+
+    function makeActionButton(label, className, handler) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.className = className;
+      button.addEventListener("click", handler);
+      return button;
+    }
+
+    function renderSkeleton(rows = 5) {
+      table.replaceChildren();
+      const widths = ["70%", "45%", "60%", "50%", "80%"];
+      for (let i = 0; i < rows; i++) {
+        const row = el("tr", "sk-row");
+        widths.forEach(w => {
+          const cell = document.createElement("td");
+          const bone = el("div", "sk");
+          bone.style.width = w;
+          cell.append(bone);
+          row.append(cell);
+        });
+        table.append(row);
+      }
+    }
+
+    function renderMedicines() {
+      const term = searchInput.value.trim().toLowerCase();
+      if (currentFilter === null && !term) {
+        lastShown = 0;
+        table.replaceChildren();
+        const hintRow = document.createElement("tr");
+        const hintCell = document.createElement("td");
+        hintCell.colSpan = 5;
+        hintCell.className = "empty";
+        hintCell.textContent = medicines.length
+          ? `Click All, Available, Low stock, Expiring soon or Expired to view medicines (${medicines.length} in inventory), or search by name.`
+          : "No medicine records found. Add your first medicine above.";
+        hintRow.appendChild(hintCell);
+        table.appendChild(hintRow);
+        return;
+      }
+      const filtered = medicines
+        .filter(m => getMedicineName(m).toLowerCase().includes(term) && matchesFilter(m))
+        .sort(compareMedicines);
+      lastShown = filtered.length;
+      table.replaceChildren();
+
+      if (!filtered.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        cell.className = "empty";
+        cell.textContent = medicines.length ? "No matching medicines." : "No medicine records found. Add your first medicine above.";
+        row.appendChild(cell);
+        table.appendChild(row);
+        return;
+      }
+
+      filtered.forEach((medicine, index) => {
+        const row = document.createElement("tr");
+        row.style.animationDelay = `${Math.min(index, 12) * 30}ms`;
+        const status = getMedicineStatus(medicine);
+        const qty = Number(medicine.quantity);
+        const reorder = Number(medicine.reorderLevel ?? 10);
+        const days = getDaysLeft(medicine);
+
+        // Name
+        const nameCell = document.createElement("td");
+        const nameWrap = el("div", "cell-main");
+        nameWrap.append(el("span", "num", getMedicineName(medicine) || "—"), el("span", "sub", `Reorder at ${Number.isFinite(reorder) ? reorder : 10}`));
+        nameCell.append(nameWrap);
+        row.append(nameCell);
+
+        // Quantity + stock meter
+        const qtyCell = document.createElement("td");
+        const qtyWrap = el("div", "cell-main");
+        qtyWrap.append(el("span", "num", String(medicine.quantity ?? "")));
+        if (Number.isFinite(qty)) {
+          const fill = reorder > 0 ? Math.min(1, qty / (reorder * 3)) * 100 : (qty > 0 ? 100 : 0);
+          qtyWrap.append(makeBar(qty <= 0 ? 4 : Math.max(fill, 6), qty <= 0 ? "bad" : qty <= reorder ? "warn" : "ok"));
+        }
+        qtyCell.append(qtyWrap);
+        row.append(qtyCell);
+
+        // Expiry + days-left meter
+        const expCell = document.createElement("td");
+        const expWrap = el("div", "cell-main");
+        expWrap.append(el("span", "num", formatDate(medicine)), el("span", "sub", daysLeftText(days)));
+        if (days !== null) {
+          if (days < 0) expWrap.append(makeBar(100, "bad"));
+          else expWrap.append(makeBar(Math.max(6, Math.min(1, days / 180) * 100), days <= 30 ? "warn" : "ok"));
+        }
+        expCell.append(expWrap);
+        row.append(expCell);
+
+        // Status
+        const statusCell = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = `status ${status.css}`;
+        badge.textContent = status.label;
+        statusCell.appendChild(badge);
+        row.appendChild(statusCell);
+
+        // Actions
+        const manageCell = document.createElement("td");
+        manageCell.className = "actions";
+        manageCell.appendChild(makeActionButton("Stock In", "secondary-button", () => adjustStock(medicine, "in")));
+        manageCell.appendChild(makeActionButton("Stock Out", "secondary-button", () => adjustStock(medicine, "out")));
+        manageCell.appendChild(makeActionButton("Edit", "secondary-button", () => editMedicine(medicine)));
+        manageCell.appendChild(makeActionButton("Delete", "danger-button", () => deleteMedicine(medicine)));
+        row.appendChild(manageCell);
+        table.appendChild(row);
+      });
+    }
+
+    async function loadMedicines() {
+      if (!getAccessToken()) {
+        showLoginScreen();
+        return;
+      }
+      renderSkeleton();
+      message.textContent = "Loading records from AWS...";
+      try {
+        const records = await callMedicineAPI(MEDICINES_ENDPOINT, "GET");
+        if (!Array.isArray(records)) throw new Error("API response is not a list of medicine records.");
+        medicines = records;
+        updateSummary();
+        renderMedicines();
+        message.textContent = `Loaded ${medicines.length} record(s) from AWS.`;
+        lastLoadedAt = new Date();
+        paintLastUpdated();
+      } catch (error) {
+        console.error("GET medicines error:", error);
+        if (!getAccessToken()) showLoginScreen();
+        else {
+          table.innerHTML = '<tr><td colspan="5" class="empty">Could not load inventory.</td></tr>';
+          message.textContent = `Unable to load inventory: ${error.message}`;
+          toast(`Unable to load inventory: ${error.message}`, "error", 6000);
+        }
+      }
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const medicine = {
+        medicineName: $("medicineName").value.trim(),
+        quantity: Number($("quantity").value),
+        expiryDate: $("expiryDate").value
+      };
+      if (!medicine.medicineName || !medicine.expiryDate || !Number.isInteger(medicine.quantity) || medicine.quantity < 0) {
+        message.textContent = "Enter a medicine name, whole-number quantity (0 or more), and expiry date.";
+        toast("Enter a medicine name, whole-number quantity (0 or more), and expiry date.", "warn");
+        return;
+      }
+      addButton.disabled = true;
+      message.textContent = "Sending medicine to AWS...";
+      try {
+        await callMedicineAPI(MEDICINES_ENDPOINT, "POST", medicine);
+        form.reset();
+        message.textContent = "Medicine added. Reloading inventory...";
+        toast(`${medicine.medicineName} added to inventory.`, "success");
+        logActivity("add", medicine.medicineName, `${medicine.quantity} unit${medicine.quantity === 1 ? "" : "s"} · expires ${medicine.expiryDate}`);
+        await loadMedicines();
+      } catch (error) {
+        console.error("POST medicine error:", error);
+        message.textContent = `Could not save medicine: ${error.message}`;
+        reportError("Could not save medicine", error);
+      } finally {
+        addButton.disabled = false;
+      }
+    });
+
+    /* ───────── Stock / edit / delete — now with modal dialogs ───────── */
+
+    async function adjustStock(medicine, direction) {
+      const isIn = direction === "in";
+      const current = Number(medicine.quantity) || 0;
+      const result = await openModal({
+        tone: isIn ? "ok" : "warn",
+        icon: isIn ? "📥" : "📤",
+        title: isIn ? "Stock In" : "Stock Out",
+        subtitle: getMedicineName(medicine),
+        confirmText: isIn ? "Add stock" : "Remove stock",
+        fields: [{ id: "amount", label: `Units to ${isIn ? "add" : "remove"}`, type: "number", min: 1, step: 1, placeholder: "e.g. 10", required: true }],
+        chips: isIn ? [1, 5, 10, 50] : [1, 5, 10, 25],
+        preview: v => {
+          const a = v.amount;
+          if (!Number.isInteger(a) || a <= 0) return { ok: false, text: `Current stock: ${current}. Enter a whole number above 0.` };
+          const next = isIn ? current + a : current - a;
+          if (next < 0) return { ok: false, text: `Only ${current} in stock — can't remove ${a}.` };
+          return { ok: true, text: `Current ${current}  →  New ${next}` };
+        }
+      });
+      if (!result) return;
+      const amount = result.amount;
+      if (!Number.isInteger(amount) || amount <= 0) {
+        toast("Enter a positive whole number.", "warn");
+        return;
+      }
+      const change = isIn ? amount : -amount;
+      try {
+        await callMedicineAPI(`${MEDICINES_ENDPOINT}/${encodeURIComponent(medicine.medicineId)}/stock`, "POST", { change });
+        message.textContent = "Stock updated.";
+        logActivity(isIn ? "in" : "out", getMedicineName(medicine), `${isIn ? "+" : "−"}${amount} unit${amount === 1 ? "" : "s"}  (${current} → ${isIn ? current + amount : current - amount})`);
+        toast(`${isIn ? "Added" : "Removed"} ${amount} unit${amount === 1 ? "" : "s"} · ${getMedicineName(medicine)}`, "success");
+        await loadMedicines();
+      } catch (error) {
+        reportError("Stock update failed", error);
+      }
+    }
+
+    async function editMedicine(medicine) {
+      const result = await openModal({
+        tone: "info",
+        icon: "✏️",
+        title: "Edit medicine",
+        subtitle: getMedicineName(medicine),
+        confirmText: "Save changes",
+        fields: [
+          { id: "name", label: "Medicine name", type: "text", value: getMedicineName(medicine), required: true },
+          { id: "quantity", label: "Total quantity", type: "number", min: 0, step: 1, value: String(medicine.quantity ?? 0), required: true, half: true },
+          { id: "reorder", label: "Reorder level", type: "number", min: 0, step: 1, value: String(medicine.reorderLevel ?? 10), required: true, half: true },
+          { id: "expiry", label: "Expiry date", type: "date", value: String(medicine.expiryDate ?? ""), required: true }
+        ]
+      });
+      if (!result) return;
+      const name = result.name;
+      const quantity = result.quantity;
+      const expiryDate = result.expiry;
+      const reorderLevel = result.reorder;
+      if (!name.trim() || !Number.isInteger(quantity) || quantity < 0 || !Number.isInteger(reorderLevel) || reorderLevel < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) {
+        toast("Enter a name, valid whole-number quantities, and a valid date.", "warn");
+        return;
+      }
+      try {
+        await callMedicineAPI(`${MEDICINES_ENDPOINT}/${encodeURIComponent(medicine.medicineId)}`, "PUT", {
+          medicineName: name.trim(), quantity, expiryDate, reorderLevel
+        });
+        message.textContent = "Medicine details updated.";
+        {
+          const changes = [];
+          if (name.trim() !== getMedicineName(medicine)) changes.push(`Name: ${getMedicineName(medicine) || "—"} → ${name.trim()}`);
+          if (quantity !== Number(medicine.quantity)) changes.push(`Quantity: ${medicine.quantity ?? 0} → ${quantity}`);
+          if (expiryDate !== String(medicine.expiryDate ?? "")) changes.push(`Expiry: ${medicine.expiryDate || "—"} → ${expiryDate}`);
+          if (reorderLevel !== Number(medicine.reorderLevel ?? 10)) changes.push(`Reorder level: ${medicine.reorderLevel ?? 10} → ${reorderLevel}`);
+          logActivity("edit", name.trim(), changes.length ? changes.join("  ·  ") : "Saved with no field changes");
+        }
+        toast(`${name.trim()} updated.`, "success");
+        await loadMedicines();
+      } catch (error) {
+        reportError("Edit failed", error);
+      }
+    }
+
+    async function deleteMedicine(medicine) {
+      const result = await openModal({
+        tone: "danger",
+        icon: "🗑️",
+        title: "Delete medicine?",
+        subtitle: getMedicineName(medicine),
+        message: "This permanently removes the record from your inventory. This cannot be undone.",
+        confirmText: "Yes, delete",
+        danger: true
+      });
+      if (!result) return;
+      try {
+        await callMedicineAPI(`${MEDICINES_ENDPOINT}/${encodeURIComponent(medicine.medicineId)}`, "DELETE");
+        message.textContent = "Medicine deleted.";
+        logActivity("delete", getMedicineName(medicine), `Removed from inventory (had ${medicine.quantity ?? 0} units, expiry ${medicine.expiryDate || "—"})`);
+        toast(`${getMedicineName(medicine)} deleted.`, "success");
+        await loadMedicines();
+      } catch (error) {
+        reportError("Delete failed", error);
+      }
+    }
+
+    /* ───────── Export / backup / print ───────── */
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function exportInventoryCSV() {
+      if (!medicines.length) {
+        toast("There are no medicine records to export. Load the inventory first.", "warn");
+        return;
+      }
+      const headers = ["Medicine ID", "Medicine Name", "Quantity", "Expiry Date", "Reorder Level", "Status"];
+      const rows = medicines.map(m => [m.medicineId ?? "", getMedicineName(m), m.quantity ?? "", m.expiryDate ?? "", m.reorderLevel ?? 10, getMedicineStatus(m).label]);
+      const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `medistock_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast(`CSV exported (${medicines.length} records).`, "success");
+    }
+
+    function backupInventoryJSON() {
+      if (!medicines.length) {
+        toast("There are no medicine records to back up. Load the inventory first.", "warn");
+        return;
+      }
+      const backup = { backupDate: new Date().toISOString(), recordCount: medicines.length, medicines };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `medistock_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast(`Backup saved (${medicines.length} records).`, "success");
+    }
+
+    function printInventory() {
+      if (!medicines.length) {
+        toast("There are no medicine records to print. Load the inventory first.", "warn");
+        return;
+      }
+      if (currentFilter === null && !searchInput.value.trim()) {
+        toast("Click a filter (for example All) first, then print.", "warn");
+        return;
+      }
+      $("printMeta").textContent = `Printed ${new Date().toLocaleString("en-IN")}  ·  ${lastShown} record(s) shown`;
+      window.print();
+    }
+
+    /* ───────── Wiring ───────── */
+
+    $("exportCsvButton").addEventListener("click", exportInventoryCSV);
+    $("backupJsonButton").addEventListener("click", backupInventoryJSON);
+    $("printButton").addEventListener("click", printInventory);
+    $("viewButton").addEventListener("click", loadMedicines);
+    $("refreshButton").addEventListener("click", loadMedicines);
+    searchInput.addEventListener("input", renderMedicines);
+    loginButton.addEventListener("click", login);
+    logoutButton.addEventListener("click", logout);
+
+    document.querySelectorAll(".chip").forEach(chip => {
+      // click again on the open filter = collapse the list; double-click always collapses
+      chip.addEventListener("click", () => setFilter(currentFilter === chip.dataset.filter ? null : chip.dataset.filter, false));
+      chip.addEventListener("dblclick", () => setFilter(null, false));
+    });
+    document.querySelectorAll(".summary-card").forEach(card => {
+      const go = () => setFilter(currentFilter === card.dataset.filter ? null : card.dataset.filter, currentFilter !== card.dataset.filter);
+      card.addEventListener("dblclick", () => setFilter(null, false));
+      card.addEventListener("click", go);
+      card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+    $("alertAction").addEventListener("click", e => setFilter(e.currentTarget.dataset.filter || "all", true));
+    document.querySelectorAll("th[data-sort] .th-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.closest("th").dataset.sort;
+        if (sortKey === key) sortDir = -sortDir; else { sortKey = key; sortDir = 1; }
+        updateSortHeaders();
+        renderMedicines();
+      });
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = (document.activeElement && document.activeElement.tagName) || "";
+      if (/INPUT|TEXTAREA|SELECT/.test(tag) || document.querySelector("dialog[open]") || appContent.hidden) return;
+      e.preventDefault();
+      searchInput.focus();
+    });
+
+    document.querySelectorAll(".hchip").forEach(chip => chip.addEventListener("click", () => {
+      historyFilter = chip.dataset.hfilter;
+      historyShown = 8;
+      document.querySelectorAll(".hchip").forEach(c => {
+        const on = c === chip;
+        c.classList.toggle("active", on);
+        c.setAttribute("aria-pressed", String(on));
+      });
+      renderHistory();
+    }));
+    $("historyMore").addEventListener("click", () => { historyShown += 10; renderHistory(); });
+    $("clearHistory").addEventListener("click", async () => {
+      const ok = await openModal({
+        tone: "danger", icon: "🧹", title: "Clear activity history?",
+        message: "This removes the saved history from this device. Your medicine records in AWS are not affected.",
+        confirmText: "Yes, clear it", danger: true
+      });
+      if (!ok) return;
+      try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+      historyShown = 8;
+      renderHistory();
+      toast("Activity history cleared.", "success");
+    });
+    renderHistory();
+
+    const historyDialog = $("historyDialog");
+    $("openHistory").addEventListener("click", () => {
+      historyShown = 8;
+      renderHistory();
+      if (!historyDialog.open) historyDialog.showModal();
+    });
+    $("historyClose").addEventListener("click", () => historyDialog.close());
+    historyDialog.addEventListener("click", e => { if (e.target === historyDialog) historyDialog.close(); });
+
+    async function initializeApp() {
+      try {
+        await handleCallback();
+      } catch (error) {
+        console.error("Authentication error:", error);
+        clearSession();
+        showLoginScreen();
+        message.textContent = `Login failed: ${error.message}`;
+        showAuthError(`Login failed: ${error.message}`);
+        return;
+      }
+      if (getAccessToken() && localStorage.getItem(SESSION_KEY)) {
+        showAuthenticatedApp();
+        await loadMedicines();
+      } else {
+        clearSession();
+        showLoginScreen();
+        message.textContent = "Please log in again to activate your secure device session.";
+      }
+    }
+
+    initializeApp();
+  </script>
+
+  <!-- UI-only helpers: theme toggle + landing button (no AWS/auth logic) -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var toggle = document.getElementById("themeToggle");
+      function paint() {
+        var dark = root.getAttribute("data-theme") === "dark";
+        toggle.textContent = dark ? "☀️" : "🌙";
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#0b1020" : "#f4f6fb");
+      }
+      toggle.addEventListener("click", function () {
+        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("alertplus_theme", next); } catch (e) {}
+        paint();
+      });
+      document.getElementById("welcomeLogin").addEventListener("click", function () {
+        document.getElementById("loginButton").click();
+      });
+      paint();
+    })();
+  </script>
+</body>
+</html>
